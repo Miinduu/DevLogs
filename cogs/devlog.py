@@ -1,21 +1,25 @@
 import logging
-import aiofiles
 
+import aiofiles
 import discord
 from discord import app_commands
 from discord.ext import commands
+from pathlib import Path
+
+from platforms.twitter_post import Twitter
 
 logger = logging.getLogger("Discord")
+file_path = Path("/home/mind/learning/devLogs/tmp/myVideo.mp4")
 
 
 class DevLog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
+        self.twitter = Twitter(name="TwitterName", videoPath=file_path)
 
     @commands.Cog.listener()
     async def on_ready(self):
         print(f"{self.__class__.__name__} is ready.")
-        logger.error("NOOOOO")
 
     @app_commands.command(
         name="devlog", description="Post your progress to social media!"
@@ -37,6 +41,10 @@ class DevLog(commands.Cog):
         if attachment:
             await save_file(attachment=attachment)
 
+        result = self.twitter.post(new_features, bool(attachment))
+
+        logger.error(f"Posted result: {result}")
+
         await interaction.response.send_message(response)
 
 
@@ -44,12 +52,10 @@ async def save_file(attachment: discord.Attachment):
     if not attachment:
         logger.error("No attachment provided")
 
-    async with aiofiles.open("/home/mind/learning/devLogs/tmp/myVideo.mp4", "wb") as fp:
-        try:
-            await attachment.save(fp)
-        except (discord.HTTPException, discord.NotFound) as e:
-            logger.error(f"Could not save file: {e}")
-
+    try:
+        await attachment.save(file_path)
+    except (discord.HTTPException, discord.NotFound) as e:
+        logger.error(f"Could not save file: {e}")
 
 
 async def setup(bot: commands.Bot):
