@@ -1,10 +1,9 @@
 import logging
+from pathlib import Path
 
-import aiofiles
 import discord
 from discord import app_commands
 from discord.ext import commands
-from pathlib import Path
 
 from platforms.twitter_post import Twitter
 
