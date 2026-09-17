@@ -44,7 +44,8 @@ class Twitter(SocialMedia):
         logger.info(f"Authorised V2: {client}")
         return client
 
-    def post(self, message: str, includeVideo=False) -> bool:
+    def post(self, message: str | None = None, includeVideo=False) -> bool:
+        return False
         if includeVideo:
             self.upload_media()
 

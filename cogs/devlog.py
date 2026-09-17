@@ -1,6 +1,6 @@
-import datetime
 import logging
 import os
+from datetime import datetime, timezone
 from pathlib import Path
 
 import discord
@@ -38,25 +38,39 @@ class DevLog(commands.Cog):
     async def dev_log(
         self,
         interaction: discord.Interaction,
-        new_features: str,
-        todos: str,
-        attachment: discord.Attachment,
+        new_features: str | None = None,
+        todos: str | None = None,
+        attachment: discord.Attachment | None = None,
     ):
+        await interaction.response.defer()
+        if not new_features and not todos and not attachment:
+            await interaction.response.send_message("No inputs were provided")
+            return
 
         if attachment:
             await save_file(attachment=attachment)
-
         uploadAttachment = bool(attachment)
-        result = self.twitter.post(new_features, uploadAttachment)
-        logger.error(f"Posted result: {result}")
 
         file = await attachment.to_file()
-        response = f"""
-            Date: {getReadableDate()}
-            \nPlanned features: {new_features}
-            \nTODOS: {todos}
-            """
-        await interaction.response.send_message(response, file=file)
+        response = [f"Date: {getReadableDate()}"]
+        if new_features:
+            response.append(f"Features: {new_features}")
+        if todos:
+            response.append(f"TODOs: {todos}")
+
+        isTweeted = self.twitter.post(new_features, uploadAttachment)
+        response.append(f"-# Tweet: {'success' if isTweeted else 'failed'}")
+
+        fileSize = os.path.getsize(file_path)
+        if fileSize <= interaction.filesize_limit:
+            response = "\n".join(response)
+            await interaction.followup.send(response, file=file)
+        else:
+            response.append(
+                f"-# Filesize too big to upload to discord: {human_readable_size(fileSize)}"
+            )
+            response = "\n".join(response)
+            await interaction.followup.send(response)
 
 
 async def save_file(attachment: discord.Attachment):
@@ -74,4 +88,15 @@ async def setup(bot: commands.Bot):
 
 
 def getReadableDate():
-    return datetime.now().strftime("%Y-%m-%d")
+    return datetime.now(tz=timezone.utc).strftime("%Y-%m-%d")
+
+
+def human_readable_size(size):
+    if size < 1000:
+        return f"{size} B"
+    elif size < 1000**2:
+        return f"{size / 1000:.1f} KB"
+    elif size < 1000**3:
+        return f"{size / 1000**2:.1f} MB"
+    else:
+        return f"{size / 1000**3:.1f} GB"
