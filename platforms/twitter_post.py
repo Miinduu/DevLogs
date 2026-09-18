@@ -44,11 +44,12 @@ class Twitter(SocialMedia):
         logger.info(f"Authorised V2: {client}")
         return client
 
-    def post(self, message: str | None = None, includeVideo=False) -> bool:
-        return False
+    def post(self, message: list[str] | None = None, includeVideo=False) -> bool:
         if includeVideo:
             self.upload_media()
 
+        message.append("-# uploaded w/ devlogs, my own custom discord bot.")
+        message = "\n".join(message)
         response = self.client.create_tweet(text=message, media_ids=[self.media_id])
         return response
 

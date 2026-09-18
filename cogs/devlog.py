@@ -58,7 +58,7 @@ class DevLog(commands.Cog):
         if todos:
             response.append(f"TODOs: {todos}")
 
-        isTweeted = self.twitter.post(new_features, uploadAttachment)
+        isTweeted = self.twitter.post(response, uploadAttachment)
         response.append(f"-# Tweet: {'success' if isTweeted else 'failed'}")
 
         fileSize = os.path.getsize(file_path)
